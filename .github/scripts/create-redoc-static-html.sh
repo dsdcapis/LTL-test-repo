@@ -10,17 +10,17 @@ findAllFiles() {
     while IFS= read -r -d '' dir; do
         rel_dir="${dir#$currentFolder/}"
         resultRef["$rel_dir"]="openapi"
-    done < <(find "$currentFolder" -type f -name "openapi.yaml" -print0 | xargs -0 -n1 dirname -z | sort -zu)
+    done < <(find "$currentFolder" -type f -name "openapi.yaml" -print0 -not -path "*/api-prds/*" | xargs -0 -n1 dirname -z | sort -zu)
 
     while IFS= read -r -d '' file; do
         rel_file="${file#$currentFolder/}"
         resultRef["$rel_file"]="pdf"
-    done < <(find "$currentFolder" -type f -name "*.pdf" -print0 | sort -z)
+    done < <(find "$currentFolder" -type f -name "*.pdf" -print0 -not -path "*/api-prds/*" | sort -z)
 
     while IFS= read -r -d '' file; do
         rel_file="${file#$currentFolder/}"
         resultRef["$rel_file"]="xlsx"
-    done < <(find "$currentFolder" -type f -name "*.xlsx" -print0 | sort -z)
+    done < <(find "$currentFolder" -type f -name "*.xlsx" -print0 -not -path "*/api-prds/*" | sort -z)
 }
 
 loadStaticHtmlToFolder() {
@@ -340,7 +340,7 @@ generateHighLevelIndex() {
 <body>
     <header>
         <div class="container">
-            <img class="logo" src="images/DSDC-LTL.svg" alt="DSDC Digital LTL Council">
+            <img class="logo" src="images/DSDC-LTLHigh-Res-R.png" alt="DSDC LTL">
         </div>
     </header>
     <div class="container">
@@ -470,7 +470,7 @@ ENDHEAD
 
     <footer>
         <div class="container">
-            <p>Copyright &copy; National Motor Freight Traffic Association, Inc. 2024. All Rights Reserved</p>
+            <p>Copyright <sup>&copy;</sup> National Motor Freight Traffic Association, Inc.<sup>&reg;</sup> (NMFTA)<sup>&reg;</sup> 2024. All Rights Reserved</p>
             <p><a href="mailto:dsdc@nmfta.org">dsdc@nmfta.org</a> &nbsp;|&nbsp; (866) 411-6632</p>
         </div>
     </footer>
@@ -642,7 +642,7 @@ ENDSCRIPT
 copyImages() {
     echo "Copying images..."
     mkdir -p "$publicFolder/images"
-    cp "$currentFolder/images/DSDC-LTL.svg" "$publicFolder/images/"
+    cp "$currentFolder/images/DSDC-LTLHigh-Res-R.png" "$publicFolder/images/"
 }
 
 mainProcess() {

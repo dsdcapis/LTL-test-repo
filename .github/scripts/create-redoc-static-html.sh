@@ -6,23 +6,23 @@ publicFolder="$currentFolder/public"
 
 findAllFiles() {
     local -n resultRef=$1
+    local excludeArgs=(-not -path "$currentFolder/api-prds/*" -not -path "$currentFolder/api-scopes/*")
 
     while IFS= read -r -d '' dir; do
         rel_dir="${dir#$currentFolder/}"
         resultRef["$rel_dir"]="openapi"
-    done < <(find "$currentFolder" -type f -name "openapi.yaml" -not -path "*/api-prds/*" -print0 | xargs -0 -n1 dirname -z | sort -zu)
+    done < <(find "$currentFolder" -type f -name "openapi.yaml" "${excludeArgs[@]}" -print0 | xargs -0 -n1 dirname -z | sort -zu)
 
     while IFS= read -r -d '' file; do
         rel_file="${file#$currentFolder/}"
         resultRef["$rel_file"]="pdf"
-    done < <(find "$currentFolder" -type f -name "*.pdf" -not -path "*/api-prds/*" -print0 | sort -z)
+    done < <(find "$currentFolder" -type f -name "*.pdf" "${excludeArgs[@]}" -print0 | sort -z)
 
     while IFS= read -r -d '' file; do
         rel_file="${file#$currentFolder/}"
         resultRef["$rel_file"]="xlsx"
-    done < <(find "$currentFolder" -type f -name "*.xlsx" -not -path "*/api-prds/*" -print0 | sort -z)
+    done < <(find "$currentFolder" -type f -name "*.xlsx" "${excludeArgs[@]}" -print0 | sort -z)
 }
-
 loadStaticHtmlToFolder() {
     local folder="$1"
 
@@ -362,7 +362,7 @@ generateHighLevelIndex() {
     <div class="container">
         <p class="section-label">DSDC Digital LTL Council</p>
         <h1>LTL API Documentation</h1>
-        <p class="intro">Supported by the Digital Standard Development Council's (DSDC) Digital LTL Council, these API standards help organizations modernize LTL workflows through standardized, open, and scalable integration.</p>
+        <p class="intro">Supported by the Digital Standards Development Council<sup>&reg;</sup> (DSDC)<sup>&reg;</sup>'s Digital LTL Council, these API standards help organizations modernize LTL workflows through standardized, open, and scalable integration.</p>
         <p class="files-heading">Available Files</p>
         <p class="files-caption">Click a spec name to preview it in your browser, or use its Download button to save the file directly. Check box(es) and use &ldquo;Download Selected&rdquo; to grab multiple files at once.</p>
         <ul class="tree" id="root">
@@ -463,7 +463,7 @@ ENDHEAD
                 if [[ -f "$publicFolder/$item/index.html" ]]; then
                     IFS='/' read -ra parts <<< "$item"
                     local fileName="${parts[-1]}"
-                    echo "${indent}<li><input type=\"checkbox\" class=\"download-checkbox\" aria-label=\"Select $fileName (OpenAPI) for download\" data-file=\"${item}/openapi-combined.yaml\" data-name=\"${item}/openapi-combined.yaml\" onchange=\"updateSelection()\"><a class=\"file-link openapi-link\" href=\"$item/index.html\">$fileName (OpenAPI)</a><a class=\"quick-download-link\" href=\"${item}/openapi-combined.yaml\" download aria-label=\"Download $fileName OpenAPI spec\">&#8595; Download</a></li>" >> "$indexFile"
+                    echo "${indent}<li><input type=\"checkbox\" class=\"download-checkbox\" aria-label=\"Select $fileName (OpenAPI) for download\" data-file=\"${item}/openapi-combined.yaml\" data-name=\"${item}/openapi-combined.yaml\" onchange=\"updateSelection()\"><a class=\"file-link openapi-link\" href=\"$item/index.html\">$fileName (OpenAPI)</a><a class=\"quick-download-link\" href=\"${item}/openapi-combined.yaml\" aria-label=\"Download $fileName OpenAPI spec\" onclick=\"handleDownloadClick(event); return false;\">&#8595; Download</a></li>" >> "$indexFile"
                 fi
 
             elif [[ "$nodeType" == "pdf" ]]; then
@@ -532,10 +532,6 @@ ENDHEAD
 
         function openDownloadModal() {
             if (selectedFiles.length === 0) return;
-            if (typeof hbspt === 'undefined') {
-                showToast('Form is loading, please try again in a moment.');
-                return;
-            }
 
             var filesToDownload = selectedFiles.slice();
             var fileList = filesToDownload.map(function(f) {
@@ -549,9 +545,11 @@ ENDHEAD
                 return;
             }
 
-           
+            if (typeof hbspt === 'undefined') {
+                showToast('Form is loading, please try again in a moment.');
+                return;
+            }
 
-            var pageUrl = new URL(window.location.href);
             pageUrl.searchParams.set('dsdc_apis_downloaded', fileList);
             window.history.replaceState({}, '', pageUrl);
 

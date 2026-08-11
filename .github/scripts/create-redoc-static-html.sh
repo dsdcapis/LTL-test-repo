@@ -6,23 +6,23 @@ publicFolder="$currentFolder/public"
 
 findAllFiles() {
     local -n resultRef=$1
+    local excludeArgs=(-not -path "$currentFolder/api-prds/*" -not -path "$currentFolder/api-scopes/*")
 
     while IFS= read -r -d '' dir; do
         rel_dir="${dir#$currentFolder/}"
         resultRef["$rel_dir"]="openapi"
-    done < <(find "$currentFolder" -type f -name "openapi.yaml" -print0 | xargs -0 -n1 dirname -z | sort -zu)
+    done < <(find "$currentFolder" -type f -name "openapi.yaml" "${excludeArgs[@]}" -print0 | xargs -0 -n1 dirname -z | sort -zu)
 
     while IFS= read -r -d '' file; do
         rel_file="${file#$currentFolder/}"
         resultRef["$rel_file"]="pdf"
-    done < <(find "$currentFolder" -type f -name "*.pdf" -print0 | sort -z)
+    done < <(find "$currentFolder" -type f -name "*.pdf" "${excludeArgs[@]}" -print0 | sort -z)
 
     while IFS= read -r -d '' file; do
         rel_file="${file#$currentFolder/}"
         resultRef["$rel_file"]="xlsx"
-    done < <(find "$currentFolder" -type f -name "*.xlsx" -print0 | sort -z)
+    done < <(find "$currentFolder" -type f -name "*.xlsx" "${excludeArgs[@]}" -print0 | sort -z)
 }
-
 loadStaticHtmlToFolder() {
     local folder="$1"
 
@@ -115,8 +115,16 @@ generateHighLevelIndex() {
             font-weight: 600;
             color: #ffffff;
             font-size: 18px;
-            margin: 0 0 16px 0;
-            padding-bottom: 10px;
+            margin: 0 0 4px 0;
+            
+        }
+        .files-caption {
+            font-family: 'Nunito Sans', Arial, sans-serif;
+            color: #B4B4B4;
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 0 0 20px 0;
+            padding-bottom: 14px;
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
@@ -164,7 +172,15 @@ generateHighLevelIndex() {
         .xlsx-link { color: #5cb85c; }
         .xlsx-link::before { content: '📊 '; margin-right: 4px; }
         .openapi-link { color: #5bc0de; }
-        .openapi-link::before { content: '📋 '; margin-right: 4px; }
+        .openapi-link::before { content: '👁 '; margin-right: 4px; }
+
+        .quick-download-link {
+            display: inline-block; margin-left: 10px; padding: 2px 10px;
+            font-size: 12px; font-family: 'Nunito Sans', Arial, sans-serif;
+            font-weight: 700; color: #ffffff; background-color: #592E82;
+            text-decoration: none; transition: background-color 0.2s;
+        }
+        .quick-download-link:hover { background-color: #3A1D57; }
 
         .toggle {
             display: inline-block;
@@ -340,14 +356,15 @@ generateHighLevelIndex() {
 <body>
     <header>
         <div class="container">
-            <img class="logo" src="images/DSDC-LTL.svg" alt="DSDC Digital LTL Council">
+            <img class="logo" src="images/DSDC-LTLHigh-Res-R.png" alt="DSDC LTL">
         </div>
     </header>
     <div class="container">
         <p class="section-label">DSDC Digital LTL Council</p>
         <h1>LTL API Documentation</h1>
-        <p class="intro">Supported by the Digital Standard Development Council's (DSDC) Digital LTL Council, these API standards help organizations modernize LTL workflows through standardized, open, and scalable integration.</p>
+        <p class="intro">Supported by the Digital Standards Development Council<sup>&reg;</sup> (DSDC)<sup>&reg;</sup>'s Digital LTL Council, these API standards help organizations modernize LTL workflows through standardized, open, and scalable integration.</p>
         <p class="files-heading">Available Files</p>
+        <p class="files-caption">Click a spec name to preview it in your browser, or use its Download button to save the file directly. Check box(es) and use &ldquo;Download Selected&rdquo; to grab multiple files at once.</p>
         <ul class="tree" id="root">
 ENDHEAD
 
@@ -446,7 +463,7 @@ ENDHEAD
                 if [[ -f "$publicFolder/$item/index.html" ]]; then
                     IFS='/' read -ra parts <<< "$item"
                     local fileName="${parts[-1]}"
-                    echo "${indent}<li><input type=\"checkbox\" class=\"download-checkbox\" aria-label=\"Select $fileName (OpenAPI) for download\" data-file=\"${item}/openapi-combined.yaml\" data-name=\"${item}/openapi-combined.yaml\" onchange=\"updateSelection()\"><a class=\"file-link openapi-link\" href=\"$item/index.html\">$fileName (OpenAPI)</a></li>" >> "$indexFile"
+                    echo "${indent}<li><input type=\"checkbox\" class=\"download-checkbox\" aria-label=\"Select $fileName (OpenAPI) for download\" data-file=\"${item}/openapi-combined.yaml\" data-name=\"${item}/openapi-combined.yaml\" onchange=\"updateSelection()\"><a class=\"file-link openapi-link\" href=\"$item/index.html\">$fileName (OpenAPI)</a><a class=\"quick-download-link\" href=\"${item}/openapi-combined.yaml\" aria-label=\"Download $fileName OpenAPI spec\" onclick=\"handleDownloadClick(event); return false;\">&#8595; Download</a></li>" >> "$indexFile"
                 fi
 
             elif [[ "$nodeType" == "pdf" ]]; then
@@ -470,7 +487,7 @@ ENDHEAD
 
     <footer>
         <div class="container">
-            <p>Copyright &copy; National Motor Freight Traffic Association, Inc. 2024. All Rights Reserved</p>
+            <p>Copyright <sup>&copy;</sup> National Motor Freight Traffic Association, Inc.<sup>&reg;</sup> (NMFTA)<sup>&reg;</sup> 2024. All Rights Reserved</p>
             <p><a href="mailto:dsdc@nmfta.org">dsdc@nmfta.org</a> &nbsp;|&nbsp; (866) 411-6632</p>
         </div>
     </footer>
@@ -515,15 +532,23 @@ ENDHEAD
 
         function openDownloadModal() {
             if (selectedFiles.length === 0) return;
-            if (typeof hbspt === 'undefined') {
-                showToast('Form is loading, please try again in a moment.');
-                return;
-            }
 
             var filesToDownload = selectedFiles.slice();
             var fileList = filesToDownload.map(function(f) {
                 return f.name.split('/').pop();
             }).join(', ');
+
+            if (localStorage.getItem('dsdc_signed_up') === '1') {
+                downloadAsZip(filesToDownload).catch(function(err) { showToast('Download failed: ' + err.message); });
+                document.querySelectorAll('.download-checkbox:checked').forEach(function(cb) { cb.checked = false; });
+                updateSelection();
+                return;
+            }
+
+            if (typeof hbspt === 'undefined') {
+                showToast('Form is loading, please try again in a moment.');
+                return;
+            }
 
             var pageUrl = new URL(window.location.href);
             pageUrl.searchParams.set('dsdc_apis_downloaded', fileList);
@@ -542,6 +567,7 @@ ENDHEAD
                         .change();
                 },
                 onFormSubmitted: function() {
+                    localStorage.setItem('dsdc_signed_up', '1');
                     closeDownloadModal();
                     downloadAsZip(filesToDownload).catch(function(err) {
                         showToast('Download failed: ' + err.message);
@@ -642,7 +668,7 @@ ENDSCRIPT
 copyImages() {
     echo "Copying images..."
     mkdir -p "$publicFolder/images"
-    cp "$currentFolder/images/DSDC-LTL.svg" "$publicFolder/images/"
+    cp "$currentFolder/images/DSDC-LTLHigh-Res-R.png" "$publicFolder/images/"
 }
 
 mainProcess() {

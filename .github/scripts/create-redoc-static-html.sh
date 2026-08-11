@@ -550,6 +550,7 @@ ENDHEAD
                 return;
             }
 
+            var pageUrl = new URL(window.location.href);
             pageUrl.searchParams.set('dsdc_apis_downloaded', fileList);
             window.history.replaceState({}, '', pageUrl);
 

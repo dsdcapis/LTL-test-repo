@@ -457,9 +457,9 @@ ENDHEAD
                 local folderName="${parts[-1]}"
                 
                 echo "${indent}<li>" >> "$indexFile"
-                echo "${indent}    <span class=\"toggle\" onclick=\"toggleFolder(this)\">▼</span>" >> "$indexFile"
+                echo "${indent}    <span class=\"toggle\" onclick=\"toggleFolder(this)\">▶</span>" >> "$indexFile"
                 echo "${indent}    <span class=\"folder\">$folderName</span>" >> "$indexFile"
-                echo "${indent}    <ul>" >> "$indexFile"
+                echo "${indent}    <ul class=\"hidden\">" >> "$indexFile"
                 
                 printTree "$item" "$indent    "
                 

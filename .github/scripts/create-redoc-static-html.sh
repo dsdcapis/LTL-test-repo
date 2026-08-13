@@ -551,7 +551,7 @@ ENDHEAD
             }).join(', ');
 
             if (localStorage.getItem('dsdc_signed_up') === '1') {
-                downloadAsZip(filesToDownload).catch(function(err) { showToast('Download failed: ' + err.message); });
+                downloadFiles(filesToDownload).catch(function(err) { showToast('Download failed: ' + err.message); });
                 document.querySelectorAll('.download-checkbox:checked').forEach(function(cb) { cb.checked = false; });
                 updateSelection();
                 return;
@@ -581,7 +581,7 @@ ENDHEAD
                 onFormSubmitted: function() {
                     localStorage.setItem('dsdc_signed_up', '1');
                     closeDownloadModal();
-                    downloadAsZip(filesToDownload).catch(function(err) {
+                    downloadFiles(filesToDownload).catch(function(err) {
                         showToast('Download failed: ' + err.message);
                     });
                     document.querySelectorAll('.download-checkbox:checked').forEach(function(cb) {
@@ -601,6 +601,29 @@ ENDHEAD
         function closeDownloadModal() {
             document.getElementById('download-modal').style.display = 'none';
             if (_modalTrigger) { _modalTrigger.focus(); _modalTrigger = null; }
+        }
+
+        async function downloadFiles(files) {
+            var txtFiles = files.filter(function(f) { return f.name.toLowerCase().endsWith('.txt'); });
+            var otherFiles = files.filter(function(f) { return !f.name.toLowerCase().endsWith('.txt'); });
+            for (var i = 0; i < txtFiles.length; i++) {
+                var f = txtFiles[i];
+                var a = document.createElement('a');
+                a.href = f.path;
+                a.download = f.name.split('/').pop();
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                if (i < txtFiles.length - 1) await new Promise(function(r) { setTimeout(r, 300); });
+            }
+            if (otherFiles.length > 0) await downloadAsZip(otherFiles);
+            else { showToast(); cleanDownloadUrl(); }
+        }
+
+        function cleanDownloadUrl() {
+            var cleanUrl = new URL(window.location.href);
+            cleanUrl.searchParams.delete('dsdc_apis_downloaded');
+            window.history.replaceState({}, '', cleanUrl);
         }
 
         async function downloadAsZip(files) {
@@ -623,9 +646,7 @@ ENDHEAD
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            var cleanUrl = new URL(window.location.href);
-            cleanUrl.searchParams.delete('dsdc_apis_downloaded');
-            window.history.replaceState({}, '', cleanUrl);
+            cleanDownloadUrl();
             showToast();
         }
 

@@ -386,7 +386,7 @@ ENDHEAD
     # Copy PDF and XLSX files
     for path in "${sortedPaths[@]}"; do
         local fileType="${allFiles[$path]}"
-        if [[ "$fileType" == "pdf" || "$fileType" == "xlsx" ]]; then
+        if [[ "$fileType" == "pdf" || "$fileType" == "xlsx" || "$fileType" == "txt" ]]; then
             local fileDir=$(dirname "$path")
             mkdir -p "$publicFolder/$fileDir"
             cp "$currentFolder/$path" "$publicFolder/$path"

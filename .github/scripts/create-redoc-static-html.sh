@@ -22,6 +22,11 @@ findAllFiles() {
         rel_file="${file#$currentFolder/}"
         resultRef["$rel_file"]="xlsx"
     done < <(find "$currentFolder" -type f -name "*.xlsx" "${excludeArgs[@]}" -print0 | sort -z)
+
+    while IFS= read -r -d '' file; do
+        rel_file="${file#$currentFolder/}"
+        resultRef["$rel_file"]="txt"
+    done < <(find "$currentFolder" -type f -name "*.txt" "${excludeArgs[@]}" -print0 | sort -z)
 }
 loadStaticHtmlToFolder() {
     local folder="$1"
@@ -171,6 +176,8 @@ generateHighLevelIndex() {
         .pdf-link::before { content: '📄 '; margin-right: 4px; }
         .xlsx-link { color: #5cb85c; }
         .xlsx-link::before { content: '📊 '; margin-right: 4px; }
+        .txt-link { color: #7ec8e3; }
+        .txt-link::before { content: '📝 '; margin-right: 4px; }
         .openapi-link { color: #5bc0de; }
         .openapi-link::before { content: '👁 '; margin-right: 4px; }
 
@@ -475,6 +482,11 @@ ENDHEAD
                 IFS='/' read -ra parts <<< "$item"
                 local fileName="${parts[-1]}"
                 echo "${indent}<li><input type=\"checkbox\" class=\"download-checkbox\" aria-label=\"Select $fileName for download\" data-file=\"$item\" data-name=\"$item\" onchange=\"updateSelection()\"><a class=\"file-link xlsx-link\" href=\"$item\" onclick=\"handleDownloadClick(event); return false;\">$fileName</a></li>" >> "$indexFile"
+
+            elif [[ "$nodeType" == "txt" ]]; then
+                IFS='/' read -ra parts <<< "$item"
+                local fileName="${parts[-1]}"
+                echo "${indent}<li><input type=\"checkbox\" class=\"download-checkbox\" aria-label=\"Select $fileName for download\" data-file=\"$item\" data-name=\"$item\" onchange=\"updateSelection()\"><a class=\"file-link txt-link\" href=\"$item\" target=\"_blank\">$fileName</a><a class=\"quick-download-link\" href=\"$item\" aria-label=\"Download $fileName\" onclick=\"handleDownloadClick(event); return false;\">&#8595; Download</a></li>" >> "$indexFile"
             fi
         done
     }

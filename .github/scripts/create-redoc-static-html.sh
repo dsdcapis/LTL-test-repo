@@ -21,12 +21,7 @@ findAllFiles() {
     while IFS= read -r -d '' file; do
         rel_file="${file#$currentFolder/}"
         resultRef["$rel_file"]="xlsx"
-    done < <(find "$currentFolder" -type f -name "*.xlsx" -not -path "$currentFolder/api-specs/*" "${excludeArgs[@]}" -print0 | sort -z)
-
-    while IFS= read -r -d '' file; do
-        rel_file="${file#$currentFolder/}"
-        resultRef["$rel_file"]="companion"
-    done < <(find "$currentFolder/api-specs" -type f -name "*.xlsx" -print0 2>/dev/null | sort -z)
+    done < <(find "$currentFolder" -type f -name "*.xlsx" "${excludeArgs[@]}" -print0 | sort -z)
 
     while IFS= read -r -d '' file; do
         rel_file="${file#$currentFolder/}"
@@ -391,7 +386,7 @@ ENDHEAD
     # Copy PDF and XLSX files
     for path in "${sortedPaths[@]}"; do
         local fileType="${allFiles[$path]}"
-        if [[ "$fileType" == "pdf" || "$fileType" == "xlsx" || "$fileType" == "txt" || "$fileType" == "companion" ]]; then
+        if [[ "$fileType" == "pdf" || "$fileType" == "xlsx" || "$fileType" == "txt" ]]; then
             local fileDir=$(dirname "$path")
             mkdir -p "$publicFolder/$fileDir"
             cp "$currentFolder/$path" "$publicFolder/$path"
@@ -477,7 +472,7 @@ ENDHEAD
                     local fileName="${parts[-1]}"
                     local fileList="${item}/openapi-combined.yaml"
                     for compPath in "${!allFiles[@]}"; do
-                        if [[ "${allFiles[$compPath]}" == "companion" && "$compPath" == "$item/"* ]]; then
+                        if [[ "${allFiles[$compPath]}" == "xlsx" && "$compPath" == "$item/"* ]]; then
                             fileList="$fileList|$compPath"
                         fi
                     done

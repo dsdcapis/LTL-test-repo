@@ -135,9 +135,9 @@ generateHighLevelIndex() {
 
         .folder-caption {
             list-style: none;
+            font-family: 'Nunito Sans', Arial, sans-serif;
             color: #B4B4B4;
-            font-size: 13px;
-            font-style: italic;
+            font-size: 14px;
             line-height: 1.6;
             margin: 16px 0 6px 0;
             padding-top: 14px;

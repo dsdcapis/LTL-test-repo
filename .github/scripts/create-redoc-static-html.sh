@@ -561,7 +561,7 @@ ENDHEAD
                 return f.name.split('/').pop();
             }).join(', ');
 
-            if (localStorage.getItem('dsdc_signed_up') === '1') {
+            if (sessionStorage.getItem('dsdc_signed_up') === '1') {
                 downloadFiles(filesToDownload).catch(function(err) { showToast('Download failed: ' + err.message); });
                 document.querySelectorAll('.download-checkbox:checked').forEach(function(cb) { cb.checked = false; });
                 updateSelection();
@@ -590,7 +590,7 @@ ENDHEAD
                         .change();
                 },
                 onFormSubmitted: function() {
-                    localStorage.setItem('dsdc_signed_up', '1');
+                    sessionStorage.setItem('dsdc_signed_up', '1');
                     closeDownloadModal();
                     downloadFiles(filesToDownload).catch(function(err) {
                         showToast('Download failed: ' + err.message);

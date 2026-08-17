@@ -21,7 +21,12 @@ findAllFiles() {
     while IFS= read -r -d '' file; do
         rel_file="${file#$currentFolder/}"
         resultRef["$rel_file"]="xlsx"
-    done < <(find "$currentFolder" -type f -name "*.xlsx" "${excludeArgs[@]}" -print0 | sort -z)
+    done < <(find "$currentFolder" -type f -name "*.xlsx" -not -path "$currentFolder/api-specs/*" "${excludeArgs[@]}" -print0 | sort -z)
+
+    while IFS= read -r -d '' file; do
+        rel_file="${file#$currentFolder/}"
+        resultRef["$rel_file"]="companion"
+    done < <(find "$currentFolder/api-specs" -type f -name "*.xlsx" -print0 2>/dev/null | sort -z)
 
     while IFS= read -r -d '' file; do
         rel_file="${file#$currentFolder/}"
@@ -386,7 +391,7 @@ ENDHEAD
     # Copy PDF and XLSX files
     for path in "${sortedPaths[@]}"; do
         local fileType="${allFiles[$path]}"
-        if [[ "$fileType" == "pdf" || "$fileType" == "xlsx" || "$fileType" == "txt" ]]; then
+        if [[ "$fileType" == "pdf" || "$fileType" == "xlsx" || "$fileType" == "txt" || "$fileType" == "companion" ]]; then
             local fileDir=$(dirname "$path")
             mkdir -p "$publicFolder/$fileDir"
             cp "$currentFolder/$path" "$publicFolder/$path"
@@ -470,7 +475,13 @@ ENDHEAD
                 if [[ -f "$publicFolder/$item/index.html" ]]; then
                     IFS='/' read -ra parts <<< "$item"
                     local fileName="${parts[-1]}"
-                    echo "${indent}<li><input type=\"checkbox\" class=\"download-checkbox\" aria-label=\"Select $fileName (OpenAPI) for download\" data-file=\"${item}/openapi-combined.yaml\" data-name=\"${item}/openapi-combined.yaml\" onchange=\"updateSelection()\"><a class=\"file-link openapi-link\" href=\"$item/index.html\">$fileName (OpenAPI)</a><a class=\"quick-download-link\" href=\"${item}/openapi-combined.yaml\" aria-label=\"Download $fileName OpenAPI spec\" onclick=\"handleDownloadClick(event); return false;\">&#8595; Download</a></li>" >> "$indexFile"
+                    local fileList="${item}/openapi-combined.yaml"
+                    for compPath in "${!allFiles[@]}"; do
+                        if [[ "${allFiles[$compPath]}" == "companion" && "$compPath" == "$item/"* ]]; then
+                            fileList="$fileList|$compPath"
+                        fi
+                    done
+                    echo "${indent}<li><input type=\"checkbox\" class=\"download-checkbox\" aria-label=\"Select $fileName (OpenAPI) for download\" data-file=\"$fileList\" data-name=\"${item}/openapi-combined.yaml\" onchange=\"updateSelection()\"><a class=\"file-link openapi-link\" href=\"$item/index.html\">$fileName (OpenAPI)</a><a class=\"quick-download-link\" href=\"${item}/openapi-combined.yaml\" aria-label=\"Download $fileName OpenAPI spec\" onclick=\"handleDownloadClick(event); return false;\">&#8595; Download</a></li>" >> "$indexFile"
                 fi
 
             elif [[ "$nodeType" == "pdf" ]]; then
@@ -524,12 +535,17 @@ ENDHEAD
 
         function updateSelection() {
             selectedFiles = [];
+            var checkedCount = 0;
             document.querySelectorAll('.download-checkbox:checked').forEach(function(cb) {
-                selectedFiles.push({ path: cb.dataset.file, name: cb.dataset.name });
+                checkedCount++;
+                cb.dataset.file.split('|').forEach(function(filePath) {
+                    filePath = filePath.trim();
+                    if (filePath) selectedFiles.push({ path: filePath, name: filePath.split('/').pop() });
+                });
             });
             var btn = document.getElementById('download-btn');
-            document.getElementById('download-count').textContent = selectedFiles.length;
-            btn.style.display = selectedFiles.length > 0 ? 'block' : 'none';
+            document.getElementById('download-count').textContent = checkedCount;
+            btn.style.display = checkedCount > 0 ? 'block' : 'none';
         }
 
         function handleDownloadClick(event) {

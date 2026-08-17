@@ -133,6 +133,17 @@ generateHighLevelIndex() {
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
+        .folder-caption {
+            list-style: none;
+            color: #B4B4B4;
+            font-size: 13px;
+            font-style: italic;
+            line-height: 1.6;
+            margin: 16px 0 6px 0;
+            padding-top: 14px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
         /* Tree */
         .tree {
             list-style-type: none;
@@ -455,7 +466,11 @@ ENDHEAD
             if [[ "$nodeType" == "folder" ]]; then
                 IFS='/' read -ra parts <<< "$item"
                 local folderName="${parts[-1]}"
-                
+
+                if [[ "$item" == "shared-resources" ]]; then
+                    echo "${indent}<li class=\"folder-caption\">Shared reference data used across all DSDC LTL APIs &#8212; standardized code lists and data schemas covering accessorial charges, freight classification, handling units, delay codes, address formats, and more.</li>" >> "$indexFile"
+                fi
+
                 echo "${indent}<li>" >> "$indexFile"
                 echo "${indent}    <span class=\"toggle\" onclick=\"toggleFolder(this)\">▶</span>" >> "$indexFile"
                 echo "${indent}    <span class=\"folder\">$folderName</span>" >> "$indexFile"
